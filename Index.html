@@ -1,0 +1,788 @@
+﻿<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kapreoolo Karten</title>
+    <link href="Content/Images/kapreolo-16x16.png" rel="icon" type="image/png" sizes="16x16">
+    <link href="Content/Images/kapreolo-32x32.png" rel="icon" type="image/png" sizes="32x32">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css" />
+
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js"></script>
+<!--    <script src="https://api3.geo.admin.ch/loader.js?version=4.4.2"></script>-->
+    <script src="https://api3.geo.admin.ch/loader.js"></script>
+    <style>
+        .map {
+            width: 600px;
+            height: 600px;
+        }
+
+        tr.selected {
+            background-color: lightgray;
+        }
+
+        tr.highlight {
+            background-color: whitesmoke;
+        }
+
+        .hi {
+            color: red;
+            font-weight: bold
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <ul class="nav nav-pills" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="idTabKarten" data-toggle="pill" href="#idKarten" role="tab" aria-controls="home" aria-selected="true">Kapreolo Karten</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="idTabHelp" data-toggle="pill" href="#idHelp" role="tab" aria-controls="profile" aria-selected="false">Hilfe</a>
+        </li>
+    </ul>
+</div>
+
+<div class="tab-content" id="myTabContent">
+    <div class="tab-pane fade show active" id="idKarten" role="tabpanel" aria-labelledby="idTabKarten">
+        <table>
+            <tr>
+                <td>
+                    <div>
+                        <div id="idSelect" class="d-flex">
+                            <div>
+                                <button type="button" class="btn" title="Zoomen zur selektierten Karte" onclick="zoomToSelectedKarte()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <div id="idChkAusschnittGroup" style="margin:9px">
+                                <div class="form-check">
+                                    <input id="idChkAusschnitt" type="checkbox" class="form-check-input" onclick="enableAusschnitt();">
+                                    <label id="idLblAusschnitt" for="idChkAusschnitt" class="form-check-label">Ausschnitt wählen</label>
+                                </div>
+                            </div>
+                            <div id="idSelAusschnittGroup" style="margin:9px">
+                                <select id="idSelAusschnitt">
+                                    <option>A4 quer</option>
+                                    <option>A4 hoch</option>
+                                </select>
+                            </div>
+                            <div id="idSelKarteGroup" class="collapse" style="margin-left:9px;">
+                                <button id="idBtnSelKarte" type="button" class="btn" onclick="addSelectedKarte()">Karte zu Ausschnitten hinzufügen</button>
+                            </div>
+                        </div>
+                        <button id="idShowAusschnitte" class="btn" type="button" disabled
+                                title="Liste der Ausschnitte anzeigen" onclick="showAusschnitte()">
+                            Ausschnitte anzeigen
+                        </button>
+                    </div>
+                    <h3>Karten</h3>
+                    <p>Selektiere eine Karte, um dafür einen Ausschnitt zu bestimmen zu können.</p>
+                    <div id="idTblKarten" style="max-width:600px; width:580px;">
+                    </div>
+                </td>
+                <td>
+                    <div id="map" class="map" style="position:relative">
+                        <pre id="idInfo" style="z-index: 1; opacity: 0; position: absolute; bottom: 0; left: 0; margin: 0;
+                              background: rgba(0,60,136,0.7); color: white; border: 0; transition: opacity 100ms ease-in;"></pre>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="tab-pane fade" id="idHelp" role="tabpanel" aria-labelledby="idTabHelp">
+        <h2>Kartenausschnitte definieren</h2>
+        <p>
+            <span class="hi">1.</span> Selektiere die gewünschte Karte in der Liste. Die selektierte Karte wird im Kartenfenster mit einem magenta-farbigen Rahmen angezeigt.<br />
+            Du kannst die Karte auch im Kartenfenster per Mausklick selektieren, falls <span class="hi">3</span> nicht aktiv ist.
+        </p>
+        <p><span class="hi">2.</span> (Optional): Damit kannst du zur selektierten Karte zoomen.</p>
+        <p>
+            <span class="hi">3.</span> Falls die Option gewählt ist, kannst du im Kartenfenster für die selektierte Karte per Klick einen Ausschnitt im Format entsprechend <span class="hi">4</span> definieren.<br />
+            Falls die Option nicht gewählt ist, kannst du im Kartenfenster per Klick eine Karte selektieren.
+        </p>
+        <p><span class="hi">4.</span> Hier kannst du das Format für einen Ausschnitt wählen.</p>
+        <p>
+            <span class="hi">5.</span> Falls die Option <span>3</span> gewählt ist, erscheint ein cyan-farbiges Rechteck im Kartenfenster. Per Klick kannst du jetzt einen Ausschnitt definieren.
+            Danach erscheint ein Fenster mit einer Liste der Ausschnitte, die du definiert hast.
+        </p>
+        <p><span class="hi">6.</span> Wenn du mit deinen Ausschnitten zufrieden bist, kopierst du die Ausschnittsinformationen ins Clipboard und fügst das per 'Paste' in ein Mail an karten@kapreolo.ch ein</p>
+        <div>
+            <img src="Content/Images/_Help_nr.png" />
+        </div>
+    </div>
+</div>
+<div class="modal" id="idModSelection">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h4 class="modal-title">Selektierte Ausschnitte</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="modal-body">
+                <div class="d-flex">
+                    <button type="button" class="btn" title="zu den selektierten Ausschnitten zoomen" onclick="zoomToAusschnitte()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button id="idBtnDelSelAusschnitte" type="button" class="btn" title="Selektiere Ausschnitte entfernen" onclick="removeAusschnitte()" style="margin-left:8px" disabled>
+                        Entfernen
+                    </button>
+                    <button type="button" class="btn" onclick="removeAlleAusschnitte()" style="margin-left:8px">
+                        Alle Entfernen
+                    </button>
+                </div>
+                <table class='row-border hover order-column' id='idTblAusschnitt'>
+                    <thead>
+                        <tr>
+                            <th>Nr</th>
+                            <th>Name</th>
+                            <th>Ausschnitt</th>
+                            <th>Feature</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Modal footer -->
+            <div class="modal-footer">
+                <textarea id="idCopyText" class="collapse"></textarea>
+                <button type="button" class="btn" title="Kopiere die Ausschnittinformationen um sie in ein Mail an karten@kapreolo.ch einzufügen" onclick="copyAusschnitte()">Kopiere Ausschnitts-Infos</button>
+                <button id="idBtnAddAusschnitt" type="button" class="btn" data-dismiss="modal">Weiterer Ausschnitt definieren</button>
+                <button type="button" class="btn" onclick="closeAusschnitte()">Schliessen</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // Create a GeoAdmin Map
+    var map = new ga.Map({
+
+        // Define the div where the map is placed
+        target: 'map',
+
+        // Create a view
+        view: new ol.View({
+
+            // Define the default resolution
+            // 10 means that one pixel is 10m width and height
+            // List of resolution of the WMTS layers:
+            // 650, 500, 250, 100, 50, 20, 10, 5, 2.5, 2, 1, 0.5, 0.25, 0.1
+            resolution: 100,
+
+            // Define a coordinate CH1903+ (EPSG:2056) for the center of the view
+            center: [2680000, 1260000]
+        })
+    });
+
+    // Create a background layer
+    //var lyr00 = ga.layer.create('ch.swisstopo.pixelkarte-farbe-pk1000.noscale');
+    //lyr00.setOpacity(0.3);
+    //lyr00.setMinResolution(9);
+    //map.addLayer(lyr00);
+
+    //var lyrB0 = new ol.layer.Image({
+    //    source: new ol.source.ImageWMS({
+    //        url: 'http://wms.zh.ch/upwms',
+    //        params: { 'LAYERS': 'upwms' },
+    //    })
+    //});
+    //lyrB0.setMaxResolution(9);
+    //map.addLayer(lyrB0);
+
+    // only limited amount of data
+    var lyr1 = ga.layer.create('ch.swisstopo.pixelkarte-grau');
+    map.addLayer(lyr1);
+
+    var karten = [
+        { solvnr: '-', stand: 2007, scale: 5000, rot: 0.0, title: 'Sagiweiher', url: 'Sagiweiher.png', extent: [2696533.6 + 100, 1252407.9 - 635, 2698233.6 + 100, 1253977.9 - 635] },
+        { solvnr: '-', stand: 2007, scale: 4000, rot: 0.0, title: 'Illnau', url: 'Illnau.png', extent: [2695804.9 + 25, 1251595.1 - 645, 2697780.9 + 25, 1253115.1 - 645] },
+
+        { solvnr: '0495', stand: 2018, scale: 10000, rot: 0.0, title: 'Blauen', url: 'Blauen.png', extent: [2687425.7, 1261518.3, 2690900.7, 1264123.3] },
+        { solvnr: '1899', stand: 2021, scale: 10000, rot: -2.4, title: 'Breitenloo', url: 'Breitenloo.png', extent: [2688798.9, 1260327.3 - 5 *554, 2688798.9 + 5*552, 1260327.3] },
+        { solvnr: '0342', stand: 2019, scale: 10000, rot: 0.0, title: 'Chäferberg', url: 'Chaeferberg.png', extent: [2680738.6, 1250250.7, 2682593.6, 1251820.7] },
+        { solvnr: '0611', stand: 2015, scale: 10000, rot: 0.0, title: 'Chomberg-Brütten', url: 'Chomberg.png', extent: [2691772.2, 1255562.3, 2695837.2, 1261512.3] },
+        { solvnr: '0789', stand: 2020, scale: 10000, rot: 0.0, title: 'Egg-Platten', url: 'Egg-Platten.png', extent: [2670386.4, 1261672.2, 2676552.5, 1266016.0] },
+        { solvnr: '0902', stand: 2015, scale: 10000, rot: 0.0, title: 'Eigental West', url: 'Eigental.png', extent: [2686226.4, 1257220.0, 2689116.4, 1260540.0] },
+        { solvnr: '0788', stand: 2022, scale: 10000, rot: 0.85, title: 'Hardwald', url: 'Hardwald.png', extent: [2685518.7, 1256044.8 - 629 * 5, 2685518.7 + 719 * 5, 1256044.8] },
+        { solvnr: '0951', stand: 2014, scale: 10000, rot: 0.0, title: 'Heidenburg', url: 'Heidenburg.png', extent: [2690003.6, 1255407.0, 2692273.6, 1258627.0] },
+        { solvnr: '1365', stand: 2021, scale: 10000, rot: -0.89, title: 'Homberg', url: 'Homberg.png', extent: [2684233.2, 1260092.3 - 457 * 5, 2684233.2 + 510 * 5, 1260092.3] },
+        { solvnr: '1317', stand: 2019, scale: 10000, rot: 0.0, title: 'Irchel', url: 'Irchel.png', extent: [2685293.9, 1264173.4, 2690278.9, 1268893.4] },
+        { solvnr: '0951', stand: 2008, scale: 10000, rot: 0.0, title: 'Mülberg-Homberg', url: 'Mülberg-Homberg.png', extent: [2690044.8, 1254133.9, 2693044.8, 1257633.9] },
+        { solvnr: '0641', stand: 2017, scale: 10000, rot: -0.79, title: 'Rümlangerwald', url: 'Rümlangerwald.png', extent: [2678709.5, 1254612.1, 2682219.5, 1257792.1] },
+        { solvnr: '0933', stand: 2019, scale: 10000, rot: 0.0, title: 'Stadlerberg-Sanzenberg', url: 'Stadlerberg-Sanzenberg.png', extent: [2672905.9, 1262631.5, 2677905.9, 1268621.5] },
+        { solvnr: '0407', stand: 2022, scale: 10000, rot: 3.0, title: 'Wangenerwald', url: 'Wangenerwald.png', extent: [2690371.8, 1253322.6 - 573 * 5, 2690371.8 + 743 * 5, 1253322.6] },
+        { solvnr: '1088', stand: 2019, scale: 10000, rot: 0.0, title: 'Wildert', url: 'Wildert.png', extent: [2693578.1, 1249256.8, 2697868.1, 1252001.8] },
+
+        { solvnr: '1583', stand: 2010, scale: 5000, rot: 0.0, title: 'Baa-Schöfflisdorf', url: 'Baa-Schöfflisdorf.png', extent: [2673590.7, 1261730.6, 2674420.7, 1262266.6] },
+        { solvnr: '1548', stand: 2011, scale: 4000, rot: 0.0, title: 'Bassersdorf', url: 'Bassersdorf.png', extent: [2688253.8, 1254771.8, 2690303.8, 1256021.8] },
+        { solvnr: '1619', stand: 2019, scale: 4000, rot: 0.0, title: 'Dübendorf', url: 'duebendorf.png', extent: [2687215.4, 1249478.7, 2690079.4, 1251572.7] },
+        { solvnr: '1177', stand: 2016, scale: 4000, rot: 0.0, title: 'Effretikon', url: 'Effretikon.png', extent: [2693299.4, 1252297.6, 2695787.4, 1255515.6] },
+        { solvnr: '1594', stand: 2017, scale: 4000, rot: 0.0, title: 'ETH Hoenggerberg', url: 'Hoenggerberg.png', extent: [2680361.6, 1250939.0, 2681169.6, 1251785.0] },
+        { solvnr: '1449', stand: 2021, scale: 4000, rot: 0.0, title: 'Opfikon', url: 'Opfikon.png', extent: [2684307.6, 1252498.3, 2686141.6, 1254602.3] },
+        { solvnr: '1872', stand: 2017, scale: 4000, rot: 0.0, title: 'Wallisellen', url: 'Wallisellen.png', extent: [2685989.7, 1251668.4, 2688521.7, 1253208.4] },
+    ];
+
+    // Karte und Liste zusammenstellen
+    var karteFeatures = [];
+    var karteLyrs = [];
+    var tableExpr = "<table class='row-border hover order-column' id='idTblKartenCore'><thead><tr>" +
+        "<th>Name</th><th>Massstab</th><th>Stand</th><th>NR</th></tr></thead><tbody>";
+    var iKarte = 0;
+    for (iKarte = 0; iKarte < karten.length; iKarte++) {
+        var karte = karten[iKarte];
+        var karteLyr = new ol.layer.Image({ source: new ol.source.ImageStatic({ url: 'Content/Images/' + karte.url, imageExtent: karte.extent }), karteTitle: karte.title });
+        karteLyrs.push(karteLyr);
+        map.addLayer(karteLyr);
+
+        var e = karte.extent;
+        var feature = new ol.Feature({
+            geometry: new ol.geom.Polygon([[[e[0], e[1]], [e[0], e[3]], [e[2], e[3]], [e[2], e[1]], [e[0], e[1]]]]),
+            title: karte.title,
+            scale: karte.scale,
+            rot: (karte.rot * Math.PI / 180.0)
+        });
+        karteFeatures.push(feature);
+
+        tableExpr = tableExpr + "<tr>"
+            + "<td>" + karte.title + "</td>"
+            + "<td>" + '1: ' + String(karte.scale).replace(/(.)(?=(\d{3})+$)/g, '$1 ') + "</td>"
+            + "<td>" + karte.stand + "</td>"
+            + "<td>" + karte.solvnr + "</td>"
+            + "</tr>";
+    }
+    tableExpr = tableExpr + "</tbody></table>";
+    var tblKarte = document.getElementById('idTblKarten');
+    tblKarte.innerHTML = tableExpr;
+
+    var vectorSource = new ol.source.Vector({ features: karteFeatures });
+    var vectorLayer = new ol.layer.Vector({ source: vectorSource });
+    map.addLayer(vectorLayer);
+
+    var iAusschnitt = 0;
+    var ausschnittSource = new ol.source.Vector();
+    var ausschnittLayer = new ol.layer.Vector({ source: ausschnittSource });
+    ausschnittLayer.setStyle(
+        new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: [60, 250, 250, 1],
+                width: 2
+            })
+        })
+    );
+    map.addLayer(ausschnittLayer);
+
+    var selFeature = new ol.Feature({
+        geometry: new ol.geom.Polygon([[[2690000, 1252000], [2690000, 1253000], [2691000, 1253000], [2691000, 1252000], [2690000, 1252000]]]),
+    });
+    var selLayer = new ol.layer.Vector({ source: new ol.source.Vector({ features: [selFeature] }), visible: false });
+    selLayer.setStyle(
+        new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: [60, 250, 250, 1],
+                width: 3
+            })
+        })
+    );
+    map.addLayer(selLayer);
+
+
+    map.on('pointermove', showInfo);
+    map.on('click', selectKarte);
+
+    var selectedKarte = '';
+    var highlightKarte = '';
+    var sourceTable = null;
+    var ausschnitTable = null;
+
+    // feature rendering
+    var styleSelected = new ol.style.Style({
+        //fill: new ol.style.Fill({ color: [250, 250, 250, 0.25] }),
+        stroke: new ol.style.Stroke({
+            color: [250, 60, 250, 1],
+            width: 3
+        })
+    });
+
+    var styleHighlight = new ol.style.Style({
+        //fill: new ol.style.Fill({ color: [250, 250, 250, 0.25] }),
+        stroke: new ol.style.Stroke({
+            color: [250, 60, 250, 1],
+            width: 1
+        })
+    });
+
+
+    var style5k = new ol.style.Style({
+        //fill: new ol.style.Fill({ color: [250, 250, 250, 0.25] }),
+        stroke: new ol.style.Stroke({
+            color: [250, 120, 120, 1],
+            width: 2
+        })
+    });
+    var style10k = new ol.style.Style({
+        //fill: new ol.style.Fill({ color: [250, 250, 250, 0.25] }),
+        stroke: new ol.style.Stroke({
+            color: [120, 120, 250, 2],
+            width: 2
+        })
+    });
+
+    var selKarteFeature = null;
+
+    vectorLayer.setStyle(function (feature, resolution) {
+        var currentStyle = feature.getStyle();
+        var scale = feature.get('scale');
+        var title = feature.get('title');
+
+        if (!scale) {
+            return currentStyle;
+        }
+
+        if (title == selectedKarte) {
+            selKarteFeature = feature;
+            return styleSelected;
+        }
+
+        if (title == highlightKarte) {
+            return styleHighlight;
+        }
+
+
+        var style = currentStyle;
+        if (scale <= 5000) {
+            style = style5k;
+        }
+        else {
+            style = style10k;
+        }
+
+        return style;
+
+    });
+
+    // Tooltip
+    var info = document.getElementById('idInfo');
+    function showInfo(event) {
+        var featuresAt = map.getFeaturesAtPixel(event.pixel, { layerFilter: function (cand) { return cand == vectorLayer } });
+        var pre = highlightKarte;
+        if (featuresAt == null || featuresAt.length == 0) {
+            info.innerText = '';
+            info.style.opacity = 0;
+            highlightKarte = '';
+        } else {
+            highlightKarte = featuresAt[0].get('title');
+            info.innerText = highlightKarte;
+            info.style.opacity = 1;
+        }
+        if (highlightKarte != pre) {
+            vectorSource.refresh({ force: true });
+
+            $(sourceTable.rows().nodes()).removeClass('highlight');
+            sourceTable.rows().every(function () {
+                var rowIdx = $(this)[0][0];
+                karteTitle = (sourceTable.cell(rowIdx, 0).data());
+                if (karteTitle == highlightKarte) {
+                    $(sourceTable.row(rowIdx).nodes()).addClass('highlight');
+                }
+            });
+        }
+
+        if (document.getElementById('idChkAusschnitt').checked
+            && selKarteFeature != null) {
+            var scale = selKarteFeature.get('scale');
+            var rot = selKarteFeature.get('rot');
+            var dx = 0.297 * scale;
+            var dy = 0.21 * scale;
+            var fmt = 'A4quer';
+            if (document.getElementById('idSelAusschnitt').selectedIndex == 1) {
+                fmt = 'A4hoch';
+                var t = dx;
+                dx = dy;
+                dy = t;
+            }
+
+            var co = event.coordinate;
+
+            selFeature.setGeometry(getRotatedRect(co, rot, dx, dy));
+            selFeature.set('fmt', fmt);
+            selLayer.setVisible(true);
+        } else {
+            selLayer.setVisible(false);
+        }
+    }
+
+    function getRotatedRect(co, rot, dx, dy) {
+        var s = Math.sin(rot);
+        var c = Math.cos(rot);
+
+        var p0 = [
+            co[0] - c * dx / 2 + s * dy / 2,
+            co[1] - s * dx / 2 - c * dy / 2
+        ];
+        var p1 = [
+            co[0] - c * dx / 2 - s * dy / 2,
+            co[1] - s * dx / 2 + c * dy / 2
+        ];
+        var p2 = [
+            co[0] + c * dx / 2 - s * dy / 2,
+            co[1] + s * dx / 2 + c * dy / 2
+        ];
+        var p3 = [
+            co[0] + c * dx / 2 + s * dy / 2,
+            co[1] + s * dx / 2 - c * dy / 2
+        ];
+
+
+        return new ol.geom.Polygon([[p0, p1, p2, p3, p0]]);
+    }
+
+    function enableSelectedKarte() {
+        if (selectedKarte == '') {
+            $('#idSelect *').attr('disabled', true);
+            document.getElementById('idLblAusschnitt').innerText = 'Ausschnitt wählen';
+            document.getElementById('idChkAusschnitt').checked = false;
+
+            displayAusschnittOption(true);
+        } else {
+            var feature = getSelectedKarte();
+            var scale = feature.get('scale');
+            var e = feature.getGeometry().getExtent();
+            var dx = 0.297 * scale;
+            var dy = 0.21 * scale;
+            var isFullCovered = ((e[2] - e[0] <= dx && e[3] - e[1] <= dy) || (e[2] - e[0] <= dy && e[3] - e[1] <= dx));
+
+            $('#idSelect *').attr('disabled', false);
+            if (!isFullCovered) {
+                document.getElementById('idLblAusschnitt').innerText = 'Ausschnitt wählen für ' + selectedKarte;
+                displayAusschnittOption(true);
+            } else {
+                document.getElementById('idChkAusschnitt').checked = false;
+                document.getElementById('idBtnSelKarte').innerText = 'Karte ' + selectedKarte + ' zu Ausschnitten hinzufügen';
+                displayAusschnittOption(false);
+            }
+        }
+        enableAusschnitt();
+    }
+    function displayAusschnittOption(showAusschnitt) {
+        if (showAusschnitt) {
+            $('#idChkAusschnittGroup').removeClass('collapse');
+            $('#idSelAusschnittGroup').removeClass('collapse');
+            $('#idSelKarteGroup').addClass('collapse');
+        } else {
+            $('#idChkAusschnittGroup').addClass('collapse');
+            $('#idSelAusschnittGroup').addClass('collapse');
+            $('#idSelKarteGroup').removeClass('collapse');
+        }
+    }
+
+    function enableAusschnitt() {
+        var iKarte = 0;
+        if (document.getElementById('idChkAusschnitt').checked
+            || $('#idSelKarteGroup').hasClass('collapse') == false) {
+            for (iKarte = 0; iKarte < karteLyrs.length; iKarte++) {
+                var karteLyr = karteLyrs[iKarte];
+                if (karteLyr.get("karteTitle") == selectedKarte) {
+                    karteLyr.setOpacity(1.0);
+                } else {
+                    karteLyr.setOpacity(0.4);
+                }
+            }
+        } else {
+            for (iKarte = 0; iKarte < karteLyrs.length; iKarte++) {
+                var karteLyr = karteLyrs[iKarte];
+                karteLyr.setOpacity(1.0);
+            }
+        }
+        //map.refresh();
+    }
+
+    function zoomToSelectedKarte() {
+        var feature = getSelectedKarte();
+        if (feature == null) { return; }
+
+        var extent = feature.getGeometry().getExtent();
+        map.getView().fit(extent, map.getSize());
+    }
+
+    function getSelectedKarte() {
+        for (var iFeature = 0; iFeature < karteFeatures.length; iFeature++) {
+            var feature = karteFeatures[iFeature];
+            if (feature.get('title') == selectedKarte) {
+                return feature;
+            }
+        }
+        return null;
+    }
+
+
+    function zoomToAusschnitte() {
+        var selRows = [];
+        var allRows = [];
+        ausschnittTable.rows().every(function () {
+            var f = this.data()[3]; // feature
+            allRows.push(f);
+            if ($(this.node()).hasClass('selected')) {
+                selRows.push(f);
+            }
+        });
+        if (selRows.length > 0) {
+            zoomTo(selRows);
+        } else {
+            zoomTo(allRows);
+        }
+    }
+
+    function removeAusschnitte() {
+        var selRows = [];
+        ausschnittTable.rows().every(function () {
+            if ($(this.node()).hasClass('selected')) {
+                var f = this.data()[3]; // feature
+                if (ausschnittSource.getFeatures().includes(f)) { ausschnittSource.removeFeature(f); }
+                selRows.push(this);
+            }
+        });
+        for (var iSel = 0; iSel < selRows.length; iSel++) {
+            selRows[iSel].remove().draw(false);
+        }
+    }
+    function removeAlleAusschnitte() {
+        var selRows = [];
+        ausschnittTable.rows().every(function () {
+            var f = this.data()[3]; // feature
+            if (ausschnittSource.getFeatures().includes(f)) { ausschnittSource.removeFeature(f); }
+            selRows.push(this);
+        });
+        for (var iSel = 0; iSel < selRows.length; iSel++) {
+            selRows[iSel].remove().draw(false);
+        }
+    }
+
+    function copyAusschnitte() {
+        var copyText = '';
+        ausschnittTable.rows().every(function () {
+            var f = this.data(); // feature
+            copyText = copyText + f[1] + '; ' + f[2] + '\n'; // [1]: karte, [2]: ausschnitt
+        });
+
+        var txtCopy = document.getElementById("idCopyText");
+        $(txtCopy).removeClass('collapse');
+        txtCopy.value = copyText;
+        txtCopy.select();
+        txtCopy.setSelectionRange(0, 99999); /*For mobile devices*/
+        document.execCommand("copy");
+        $(txtCopy).addClass('collapse');
+    }
+
+    function closeAusschnitte() {
+        document.getElementById('idChkAusschnitt').checked = false;
+        $('#idModSelection').modal('hide');
+    }
+
+    function zoomTo(features) {
+        if (features.length <= 0) { return; }
+        var extent = new ol.extent.createEmpty();
+        features.forEach(function (feature) {
+            //add extent of every feature to the extent
+            extent = new ol.extent.extend(extent, feature.getGeometry().getExtent());
+        });
+        map.getView().fit(extent, map.getSize());
+    }
+
+    function showAusschnitte() {
+        document.getElementById('idShowAusschnitte').disabled = false;
+
+        var b = document.getElementById('idBtnAddAusschnitt');
+        if (document.getElementById('idChkAusschnitt').checked) {
+            $(b).removeClass('collapse');
+        } else {
+            $(b).addClass('collapse');
+        }
+        $('#idModSelection').modal('show');
+    }
+    function addSelectedKarte() {
+        var feature = getSelectedKarte();
+        var ausschnittFeature = new ol.Feature({
+            geometry: feature.getGeometry().clone()
+        });
+        ausschnittSource.addFeature(ausschnittFeature);
+
+        ausschnittTable.row.add([iAusschnitt, selectedKarte, 'ganze Karte', ausschnittFeature]).draw(false);
+        iAusschnitt++;
+        showAusschnitte();
+        ausschnittTable.columns.adjust();
+        return;
+
+    }
+    function selectKarte(event) {
+        if (document.getElementById('idChkAusschnitt').checked) {
+            var pll = selFeature.getGeometry().getFirstCoordinate();
+            var ausschnittFeature = new ol.Feature({
+                geometry: selFeature.getGeometry().clone()
+            });
+            ausschnittSource.addFeature(ausschnittFeature);
+
+            var f = Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
+            var sAusschnitt = f.format(pll[0]) + ', ' + f.format(pll[1]) + ', ' + selFeature.get('fmt');
+            ausschnittTable.row.add([iAusschnitt, selectedKarte, sAusschnitt, ausschnittFeature]).draw(false);
+            iAusschnitt++;
+            showAusschnitte();
+            ausschnittTable.columns.adjust();
+            return;
+        }
+        var featuresAt = map.getFeaturesAtPixel(event.pixel);
+        var pre = selectedKarte;
+        if (featuresAt == null || featuresAt.length == 0) {
+            selectedKarte = '';
+        } else {
+            selectedKarte = featuresAt[0].get('title');
+        }
+        if (selectedKarte != pre) {
+            vectorSource.refresh({ force: true });
+
+            $(sourceTable.rows().nodes()).removeClass('selected');
+            sourceTable.rows().every(function () {
+                var rowIdx = $(this)[0][0];
+                karteTitle = (sourceTable.cell(rowIdx, 0).data());
+                if (karteTitle == selectedKarte) {
+                    $(sourceTable.row(rowIdx).nodes()).addClass('selected');
+                }
+            });
+            enableSelectedKarte();
+        }
+    }
+
+    function datatableSelection(table, tr, mouseEvent) {
+        if (mouseEvent.ctrlKey) {
+            if ($(tr).hasClass('selected')) {
+                $(tr).removeClass('selected');
+            } else {
+                //sourceTable.$('tr.selected').removeClass('selected');
+                $(tr).addClass('selected');
+                table["lastRow"] = tr;
+            }
+            table["rangeRow"] = null;
+        } else if (mouseEvent.shiftKey == false || table["lastRow"] == null) {
+            table.rows().every(function () {
+                $(this.node()).removeClass('selected');
+            });
+            $(tr).addClass('selected');
+            table["lastRow"] = tr;
+            table["rangeRow"] = null;
+        } else {
+            clearTextSelection();
+            var lastIdx = table["lastRow"].rowIndex;
+            var rangeIdx = -1;
+            var minIdx = -1;
+            var maxIdx = -1;
+            if (!(table["rangeRow"] == null)) {
+                rangeIdx = table["rangeRow"].rowIndex;
+                minIdx = Math.min(rangeIdx, lastIdx);
+                maxIdx = Math.max(rangeIdx, lastIdx);
+                table.rows().every(function () {
+                    var idx = this.node().rowIndex;
+                    if ((idx >= minIdx && idx <= maxIdx)) {
+                        $(this.node()).removeClass('selected');
+                    }
+                });
+            }
+            rangeIdx = tr.rowIndex;
+            minIdx = Math.min(rangeIdx, lastIdx);
+            maxIdx = Math.max(rangeIdx, lastIdx);
+            table.rows().every(function () {
+                var idx = this.node().rowIndex;
+                if ((idx >= minIdx && idx <= maxIdx)) {
+                    $(this.node()).addClass('selected');
+                }
+            });
+            table["rangeRow"] = tr;
+        }
+    }
+
+    function clearTextSelection() {
+        if (window.getSelection) {
+            if (window.getSelection().empty) {  // Chrome
+                window.getSelection().empty();
+            } else if (window.getSelection().removeAllRanges) {  // Firefox
+                window.getSelection().removeAllRanges();
+            }
+        } else if (document.selection) {  // IE?
+            document.selection.empty();
+        }
+    }
+    window.onresize = function () {
+        setTimeout(function () { map.updateSize(); }, 200);
+    }
+
+    $(document).ready(function () {
+
+        $('#idSelect *').attr('disabled', true);
+
+        sourceTable = $('#idTblKartenCore').DataTable({
+            scrollY: "40vh",
+            scrollCollapse: true,
+            paging: false,
+            info: false
+        });
+
+
+        $('#idTblKartenCore tbody').on('click', 'tr', function () {
+            $(sourceTable.rows().nodes()).removeClass('selected');
+            $(this).toggleClass('selected');
+
+            var rowIdx = $(this)[0]._DT_RowIndex;
+            selectedKarte = (sourceTable.cell(rowIdx, 0).data());
+            enableSelectedKarte();
+
+            vectorSource.refresh({ force: true });
+        });
+
+        $('#idTblKartenCore tbody').on('mouseenter', 'td', function () {
+            var rowIdx = sourceTable.cell(this).index().row;
+
+            $(sourceTable.rows().nodes()).removeClass('highlight');
+            $(sourceTable.row(rowIdx).nodes()).addClass('highlight');
+
+            highlightKarte = (sourceTable.cell(rowIdx, 0).data());
+
+            vectorSource.refresh({ force: true });
+        });
+
+
+        ausschnittTable = $('#idTblAusschnitt').DataTable({
+            scrollY: "40vh",
+            scrollCollapse: true,
+            paging: false,
+            info: false,
+            columnDefs: [
+                {
+                    "targets": [0, 3],
+                    "visible": false,
+                    "searchable": false
+                }]
+        });
+
+        $('#idTblAusschnitt tbody').on('click', 'tr', function (mouseEvent) {
+            datatableSelection(ausschnittTable, this, mouseEvent);
+            document.getElementById('idBtnDelSelAusschnitte').disabled = !(ausschnittTable.rows('.selected').data().length > 0);
+            //                loadFootprints(packageTable);
+        });
+
+    });
+</script>
+</body>
