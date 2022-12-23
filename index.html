@@ -782,7 +782,7 @@
             //                loadFootprints(packageTable);
         });
 
-        if (!window.location.search.startsWith("?mapname=")) {
+        if (window.location.search.startsWith("?mapname=")) {
             t = window.location.search.substr(9);
             t = decodeURI(t)
             selectedKarte = t;
